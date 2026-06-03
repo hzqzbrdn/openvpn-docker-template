@@ -1,0 +1,28 @@
+# PKI - NEVER commit these (contains CA, certs, private keys)
+pki/
+
+# Client config files (contain embedded certificates)
+clients/
+
+# Database (runtime data)
+db/
+
+# Logs
+log/
+
+# OpenVPN UI backup
+openvpn-ui-backup/
+
+# Static client configs
+staticclients/
+
+# Docker volumes (if mounted locally)
+volumes/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+*.env

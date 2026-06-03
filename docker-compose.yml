@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  openvpn:
+    image: d3vilh/openvpn-server:latest
+    container_name: openvpn
+    network_mode: host
+    privileged: true
+    environment:
+      - TZ=Asia/Kuala_Lumpur       # Change to your timezone
+    volumes:
+      - ./server.conf:/etc/openvpn/server.conf
+      - ./config/easy-rsa.vars:/etc/openvpn/easy-rsa.vars
+      - ./fw-rules.sh:/opt/app/fw-rules.sh
+      - openvpn_pki:/etc/openvpn/pki
+      - openvpn_clients:/etc/openvpn/clients
+      - openvpn_staticclients:/etc/openvpn/staticclients
+      - openvpn_log:/var/log/openvpn
+    restart: unless-stopped
+
+  openvpn-ui:
+    image: d3vilh/openvpn-ui:latest
+    container_name: openvpn-ui
+    environment:
+      - TZ=Asia/Kuala_Lumpur       # Change to your timezone
+      - OPENVPN_UI_USERNAME=admin  # Change this
+      - OPENVPN_UI_PASSWORD=admin  # Change this immediately
+    volumes:
+      - ./db:/opt/openvpn-ui/db
+      - openvpn_pki:/etc/openvpn/pki
+      - openvpn_clients:/etc/openvpn/clients
+      - openvpn_staticclients:/etc/openvpn/staticclients
+      - openvpn_log:/var/log/openvpn
+    ports:
+      - "8080:8080"
+    depends_on:
+      - openvpn
+    restart: unless-stopped
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    ports:
+      - "9000:9000"
+      - "9443:9443"
+    restart: unless-stopped
+
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    command:
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=YOUR_EMAIL"     # Change this
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_letsencrypt:/letsencrypt
+    restart: unless-stopped
+
+volumes:
+  openvpn_pki:
+  openvpn_clients:
+  openvpn_staticclients:
+  openvpn_log:
+  portainer_data:
+  traefik_letsencrypt:
